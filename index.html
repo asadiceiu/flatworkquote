@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlatworkQuote — the concrete estimating app that figures the yards and texts the price</title>
+<meta name="description" content="Concrete estimating app for flatwork contractors. Figure the yards, price the job from your rates, and text a branded quote before you leave the driveway. $29/mo flat, unlimited bids.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<!-- TODO before launch: add Plausible snippet for flatworkquote.com -->
+<!-- <script defer data-domain="flatworkquote.com" src="https://plausible.io/js/script.tagged-events.js"></script> -->
+<style>
+  :root{
+    --concrete:#E7E7E1;
+    --form-white:#FFFFFF;
+    --steel:#22242A;
+    --steel-soft:#565961;
+    --paint:#E8551A;
+    --paint-dark:#C64512;
+    --chalk:#2456A6;
+    --chalk-soft:#DCE4F2;
+    --paper:#FBFAF6;
+    --rule:#C9C9C0;
+    --radius:6px;
+    --disp:'Barlow Condensed',sans-serif;
+    --body:'Barlow',sans-serif;
+    --mono:'IBM Plex Mono',monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto} *,*::before,*::after{animation:none!important;transition:none!important}}
+  body{font-family:var(--body);background:var(--concrete);color:var(--steel);line-height:1.55;font-size:18px}
+  a{color:var(--chalk)}
+  :focus-visible{outline:3px solid var(--chalk);outline-offset:2px}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+
+  header{border-bottom:2px solid var(--steel);background:var(--concrete);position:sticky;top:0;z-index:20}
+  .nav{display:flex;align-items:center;justify-content:space-between;padding:13px 0;gap:12px}
+  .logo{font-family:var(--disp);font-weight:700;font-size:24px;letter-spacing:.02em;text-transform:uppercase;color:var(--steel);text-decoration:none}
+  .logo span{color:var(--paint)}
+  .nav-right{display:flex;align-items:center;gap:14px}
+  .price-chip{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--steel-soft)}
+  .nav a.cta{background:var(--steel);color:#fff;text-decoration:none;font-family:var(--disp);text-transform:uppercase;letter-spacing:.06em;font-size:16px;padding:9px 18px;border-radius:var(--radius);white-space:nowrap}
+  .nav a.cta:hover{background:var(--paint)}
+
+  .eyebrow{font-family:var(--disp);text-transform:uppercase;letter-spacing:.14em;font-size:15px;font-weight:600;color:var(--paint);display:inline-block;border:1.5px solid var(--paint);padding:3px 10px;border-radius:3px;margin-bottom:18px}
+
+  /* HERO */
+  .hero{padding:56px 0 40px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,400px);gap:44px;align-items:center}
+  .hero h1{font-family:var(--disp);font-weight:700;font-size:clamp(38px,5.6vw,60px);line-height:1.03;text-transform:uppercase;letter-spacing:.01em}
+  .hero h1 em{font-style:normal;color:var(--paint)}
+  .hero p.sub{margin:18px 0 6px;font-size:19px;color:var(--steel-soft);max-width:540px}
+  .hero p.sub b{color:var(--steel)}
+  .hero-cta{margin-top:22px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+  .btn-primary{display:inline-block;background:var(--paint);color:#fff;border:none;cursor:pointer;font-family:var(--disp);text-transform:uppercase;letter-spacing:.06em;font-weight:700;font-size:20px;padding:15px 30px;border-radius:var(--radius);text-decoration:none;box-shadow:0 3px 0 var(--paint-dark)}
+  .btn-primary:hover{background:var(--steel);box-shadow:0 3px 0 #000}
+  .cta-fine{font-size:14px;color:var(--steel-soft);line-height:1.4}
+  .cta-fine b{color:var(--steel);font-family:var(--mono);font-size:15px}
+
+  /* phone artifact — hero visual */
+  .phone{width:100%;max-width:380px;margin:0 auto;background:var(--steel);border-radius:34px;padding:14px 12px;box-shadow:0 20px 44px rgba(34,36,42,.35)}
+  .phone .screen{background:#F4F2EC;border-radius:24px;overflow:hidden}
+  .phone .sms-head{background:#E8E6DF;padding:10px 14px;text-align:center;font-size:12.5px;color:var(--steel-soft);border-bottom:1px solid #D8D5CC}
+  .phone .sms-head b{display:block;font-size:13.5px;color:var(--steel)}
+  .sms-body{padding:14px 12px 18px;display:flex;flex-direction:column;gap:9px}
+  .bubble{max-width:85%;padding:9px 12px;border-radius:16px;font-size:13.5px;line-height:1.4}
+  .from-me{align-self:flex-end;background:var(--chalk);color:#fff;border-bottom-right-radius:4px}
+  .from-them{align-self:flex-start;background:#E3E1D9;color:var(--steel);border-bottom-left-radius:4px}
+  .quote-card{align-self:flex-end;width:88%;background:#fff;border:1.5px solid var(--rule);border-radius:12px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+  .quote-card .qc-top{background:var(--steel);color:#fff;padding:8px 12px;font-family:var(--disp);text-transform:uppercase;letter-spacing:.06em;font-size:12.5px;display:flex;justify-content:space-between}
+  .quote-card .qc-top span{color:#FFB894;font-family:var(--mono);letter-spacing:0}
+  .qc-rows{padding:8px 12px;font-size:12px}
+  .qc-row{display:flex;justify-content:space-between;padding:3px 0;color:var(--steel-soft)}
+  .qc-row.total{border-top:1.5px solid var(--steel);margin-top:4px;padding-top:6px;font-family:var(--disp);text-transform:uppercase;font-size:14px;color:var(--steel);font-weight:700}
+  .qc-row.total b{font-family:var(--mono);color:var(--paint)}
+  .qc-row .m{font-family:var(--mono)}
+  .qc-approve{margin:0 12px 10px;text-align:center;background:var(--chalk-soft);border:1.5px dashed var(--chalk);border-radius:8px;padding:6px;font-family:var(--disp);text-transform:uppercase;letter-spacing:.06em;font-size:11.5px;color:var(--chalk);font-weight:600}
+  .receipt{align-self:flex-end;font-family:var(--mono);font-size:10.5px;color:#7A7D85;padding-right:4px}
+  .receipt b{color:var(--paint)}
+  .phone-caption{text-align:center;font-family:var(--mono);font-size:12.5px;color:var(--steel-soft);margin-top:12px}
+
+  /* spec strip — honest numbers, not fake social proof */
+  .spec-strip{background:var(--steel);color:#fff;border-radius:var(--radius);display:grid;grid-template-columns:repeat(3,1fr);text-align:center;overflow:hidden}
+  .spec{padding:22px 14px;border-right:1px solid #34373F}
+  .spec:last-child{border-right:none}
+  .spec .big{font-family:var(--disp);font-weight:700;font-size:34px;color:#FFB894;line-height:1.1}
+  .spec .small{font-size:13.5px;color:#B9BBC2;margin-top:4px;line-height:1.35}
+
+  .chalk-line{border:0;border-top:2px dashed var(--chalk);opacity:.55;margin:44px 0}
+
+  section{padding:52px 0}
+  h2{font-family:var(--disp);font-weight:700;text-transform:uppercase;font-size:clamp(28px,4vw,40px);letter-spacing:.01em;margin-bottom:14px}
+  .lede{font-size:18px;color:var(--steel-soft);max-width:680px;margin-bottom:30px}
+
+  /* pain mirror */
+  .pain{background:var(--steel);color:#D7D8DC;border-radius:var(--radius)}
+  .pain-inner{padding:40px 36px}
+  .pain h2{color:#fff}
+  .pain .grid{display:grid;grid-template-columns:1fr 1fr;gap:30px;align-items:center;margin-top:8px}
+  .pain p{font-size:17px;line-height:1.6}
+  .pain p b{color:#FFB894}
+  .night{font-family:var(--mono);font-size:13.5px;background:#2C2F37;border-radius:var(--radius);padding:20px;line-height:2.05}
+  .night .t{color:#8A8D96}
+  .night .x{color:#E07A56}
+  .night .ok{color:#8FD49B}
+
+  /* steps */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .step{background:var(--form-white);border:1.5px solid var(--rule);border-radius:var(--radius);padding:22px}
+  .step .kicker{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--paint);letter-spacing:.06em;margin-bottom:8px}
+  .step h3{font-family:var(--disp);text-transform:uppercase;font-size:21px;letter-spacing:.03em;margin-bottom:8px}
+  .step p{font-size:15.5px;color:var(--steel-soft)}
+
+  /* live math demo */
+  .demo{display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:26px;align-items:start}
+  .panel{background:var(--form-white);border:1.5px solid var(--rule);border-radius:var(--radius);box-shadow:0 2px 0 rgba(34,36,42,.10)}
+  .panel-head{font-family:var(--disp);text-transform:uppercase;letter-spacing:.1em;font-size:15px;font-weight:700;padding:12px 18px;border-bottom:1.5px solid var(--rule);display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .panel-head .tag{font-family:var(--mono);font-size:11px;font-weight:600;color:#fff;background:var(--chalk);padding:2px 8px;border-radius:3px}
+  .calc{padding:18px}
+  .calc label{display:block;font-family:var(--disp);text-transform:uppercase;letter-spacing:.08em;font-size:14px;font-weight:600;color:var(--steel-soft);margin:12px 0 4px}
+  .calc label:first-child{margin-top:0}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .calc input,.calc select{width:100%;font-family:var(--mono);font-size:17px;font-weight:600;padding:9px 12px;border:1.5px solid var(--rule);border-radius:var(--radius);background:var(--paper);color:var(--steel)}
+  .calc input:focus,.calc select:focus{border-color:var(--chalk)}
+  .mathwork{padding:20px 22px;font-family:var(--mono);font-size:14.5px;line-height:2.1}
+  .mathwork .dim{color:var(--steel-soft)}
+  .mathwork .hl{color:var(--paint);font-weight:600}
+  .mathwork .rule-line{border-top:1.5px solid var(--rule);margin:8px 0}
+  .mathwork .final{font-size:17px;font-weight:600}
+
+  /* one thing */
+  .onething{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+  .does,.doesnt{background:var(--form-white);border:1.5px solid var(--rule);border-radius:var(--radius);padding:26px}
+  .does h3,.doesnt h3{font-family:var(--disp);text-transform:uppercase;font-size:22px;margin-bottom:14px}
+  .does h3{color:var(--paint)}
+  .doesnt h3{color:var(--steel-soft)}
+  .does ul,.doesnt ul{list-style:none}
+  .does li,.doesnt li{padding:7px 0 7px 28px;position:relative;font-size:16px}
+  .does li::before{content:"■";color:var(--paint);position:absolute;left:4px;top:11px;font-size:12px}
+  .doesnt li::before{content:"—";color:var(--steel-soft);position:absolute;left:4px}
+  .doesnt li{color:var(--steel-soft)}
+  .doesnt p.note{margin-top:12px;font-size:14.5px;color:var(--steel-soft);font-style:italic}
+
+  /* pricing */
+  .price-card{max-width:600px;margin:0 auto;background:var(--form-white);border:2px solid var(--steel);border-radius:var(--radius);padding:34px;text-align:center;box-shadow:6px 6px 0 rgba(34,36,42,.15)}
+  .price-card .amount{font-family:var(--disp);font-weight:700;font-size:66px;line-height:1}
+  .price-card .amount small{font-size:22px;color:var(--steel-soft);font-weight:600}
+  .price-card .flatline{font-family:var(--mono);font-size:14px;color:var(--paint);font-weight:600;margin-top:4px}
+  .price-card ul{list-style:none;text-align:left;margin:22px auto;max-width:440px}
+  .price-card li{padding:7px 0 7px 28px;position:relative;font-size:16px}
+  .price-card li::before{content:"■";color:var(--paint);position:absolute;left:4px;font-size:12px;top:11px}
+  .price-card li b{font-weight:700}
+  .price-note{font-size:14px;color:var(--steel-soft);margin-top:12px}
+  .founding{margin:18px auto 6px;max-width:440px;background:var(--chalk-soft);border:1.5px solid var(--chalk);border-radius:var(--radius);padding:12px 16px;font-size:15px;color:var(--steel)}
+  .founding b{color:var(--chalk)}
+
+  /* fake-door form */
+  #early-access{display:none;padding-top:8px}
+  #early-access.open{display:block}
+  .signup-card{max-width:600px;margin:0 auto;background:var(--chalk-soft);border:2px solid var(--chalk);border-radius:var(--radius);padding:30px}
+  .signup-card h3{font-family:var(--disp);text-transform:uppercase;font-size:25px;margin-bottom:6px;color:var(--chalk)}
+  .signup-card p{font-size:15.5px;margin-bottom:16px}
+  fieldset{border:none;margin:14px 0 0}
+  legend{font-family:var(--disp);text-transform:uppercase;letter-spacing:.08em;font-size:14.5px;font-weight:600;margin-bottom:8px}
+  .radio-row{display:flex;flex-wrap:wrap;gap:8px}
+  .radio-row label{display:inline-flex;align-items:center;gap:7px;background:#fff;border:1.5px solid var(--rule);border-radius:20px;padding:8px 14px;font-size:15px;cursor:pointer}
+  .radio-row label:has(input:checked){border-color:var(--chalk);background:var(--chalk);color:#fff}
+  .radio-row input{accent-color:var(--chalk)}
+  .signup-card .email-label{display:block;font-family:var(--disp);text-transform:uppercase;letter-spacing:.08em;font-size:14.5px;font-weight:600;margin:18px 0 5px}
+  .signup-card input[type=email]{width:100%;font-size:17px;padding:12px;border:1.5px solid var(--rule);border-radius:var(--radius);font-family:var(--body);background:#fff}
+  .signup-card button{margin-top:18px;width:100%}
+  .thanks{display:none;text-align:center;font-family:var(--disp);text-transform:uppercase;font-size:22px;color:var(--chalk);padding:20px 0}
+
+  /* founder note */
+  .founder{background:var(--form-white);border:1.5px solid var(--rule);border-left:5px solid var(--paint);border-radius:var(--radius);padding:28px 30px;max-width:760px;margin:0 auto}
+  .founder p{font-size:16.5px;margin-bottom:12px;color:var(--steel)}
+  .founder p:last-of-type{margin-bottom:0}
+  .founder .sig{font-family:var(--disp);text-transform:uppercase;font-size:18px;letter-spacing:.04em;margin-top:14px}
+  .founder .sig small{display:block;font-family:var(--body);text-transform:none;font-size:13.5px;color:var(--steel-soft);letter-spacing:0}
+
+  /* faq */
+  .faq details{background:var(--form-white);border:1.5px solid var(--rule);border-radius:var(--radius);margin-bottom:10px;padding:0 18px}
+  .faq summary{cursor:pointer;font-family:var(--disp);text-transform:uppercase;letter-spacing:.04em;font-size:17.5px;font-weight:600;padding:14px 0;list-style:none}
+  .faq summary::-webkit-details-marker{display:none}
+  .faq summary::before{content:"+";color:var(--paint);font-weight:700;margin-right:10px}
+  .faq details[open] summary::before{content:"–"}
+  .faq details p{padding:0 0 16px 24px;color:var(--steel-soft);font-size:15.5px;max-width:720px}
+
+  .final-cta{text-align:center}
+  .final-cta h2{margin-bottom:20px}
+
+  footer{border-top:2px solid var(--steel);padding:26px 0 96px;font-size:14px;color:var(--steel-soft)}
+  footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+
+  /* sticky mobile CTA */
+  .sticky-cta{position:fixed;bottom:0;left:0;right:0;z-index:30;background:var(--steel);padding:10px 16px calc(10px + env(safe-area-inset-bottom));display:none;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 -4px 14px rgba(0,0,0,.2)}
+  .sticky-cta .s-price{font-family:var(--mono);color:#FFB894;font-size:14px;font-weight:600;line-height:1.3}
+  .sticky-cta .s-price small{display:block;color:#B9BBC2;font-size:11px;font-family:var(--body)}
+  .sticky-cta .btn-primary{font-size:17px;padding:11px 20px;box-shadow:none}
+
+  @media(max-width:900px){
+    .hero{grid-template-columns:1fr;gap:30px}
+    .phone{max-width:340px}
+    .demo{grid-template-columns:1fr}
+    .steps{grid-template-columns:1fr}
+    .pain .grid{grid-template-columns:1fr}
+    .onething{grid-template-columns:1fr}
+    .spec-strip{grid-template-columns:1fr}
+    .spec{border-right:none;border-bottom:1px solid #34373F;padding:16px}
+    .spec:last-child{border-bottom:none}
+  }
+  @media(max-width:760px){
+    .sticky-cta{display:flex}
+  }
+  @media(max-width:480px){
+    body{font-size:16px}
+    .wrap{padding:0 16px}
+    .price-chip{display:none}
+    .pain-inner{padding:26px 20px}
+    .night{font-size:12px;padding:14px}
+    .mathwork{font-size:12.5px;padding:14px}
+    .calc{padding:14px}
+    .price-card{padding:24px 18px}
+    .founder{padding:22px 18px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="logo" href="#">Flatwork<span>Quote</span></a>
+    <div class="nav-right">
+      <span class="price-chip">$29/mo flat · unlimited bids</span>
+      <a class="cta trial-link" href="#pricing">Start free trial</a>
+    </div>
+  </div>
+</header>
+
+<main>
+<div class="wrap">
+  <div class="hero">
+    <div>
+      <span class="eyebrow">The concrete estimating app for flatwork</span>
+      <h1>Figure the yards. Text the price. <em>Before you leave the driveway.</em></h1>
+      <p class="sub">You already do the math — length times width times depth, over 27, plus waste. FlatworkQuote turns that same math into a <b>branded price the customer gets by text</b>, with every number shown. No retyping into a second app. No 9pm kitchen-table paperwork.</p>
+      <div class="hero-cta">
+        <button class="btn-primary trial-btn" type="button">Start free trial — no card needed</button>
+        <div class="cta-fine"><b>$29/mo flat.</b> Unlimited bids.<br>No per-user pricing. Cancel anytime, keep your data.</div>
+      </div>
+    </div>
+    <div>
+      <div class="phone" role="img" aria-label="Product mockup: a text message conversation where the contractor sends a branded driveway quote and sees when the customer opens it">
+        <div class="screen">
+          <div class="sms-head"><b>Dave — 41 Maple St</b>driveway tear-out &amp; repour</div>
+          <div class="sms-body">
+            <div class="bubble from-them">How much to redo the driveway? 30 x 24 ish</div>
+            <div class="bubble from-me">Just measured it up. Here's your price 👇</div>
+            <div class="quote-card">
+              <div class="qc-top">Your Company Concrete <span>#2026-041</span></div>
+              <div class="qc-rows">
+                <div class="qc-row"><span>Ready-mix 3500 PSI, 9.5 yd</span><span class="m">$1,758</span></div>
+                <div class="qc-row"><span>Wire mesh, 23 sheets</span><span class="m">$414</span></div>
+                <div class="qc-row"><span>Form, pour &amp; broom finish</span><span class="m">$1,980</span></div>
+                <div class="qc-row total"><span>Total</span><b>$4,152</b></div>
+              </div>
+              <div class="qc-approve">Tap to approve ✓</div>
+            </div>
+            <div class="receipt"><b>Opened</b> 2 min after send</div>
+          </div>
+        </div>
+      </div>
+      <p class="phone-caption">Product mockup — the quote your customer gets</p>
+    </div>
+  </div>
+
+  <div class="spec-strip" role="list">
+    <div class="spec" role="listitem"><div class="big">78%</div><div class="small">of jobs go to the first pro who sends a number — speed wins bids*</div></div>
+    <div class="spec" role="listitem"><div class="big">4 taps</div><div class="small">from slab dimensions to a priced, sendable quote</div></div>
+    <div class="spec" role="listitem"><div class="big">$29 flat</div><div class="small">unlimited bids · no per-user tiers · no invoice caps</div></div>
+  </div>
+
+  <hr class="chalk-line" aria-hidden="true">
+
+  <section class="pain">
+    <div class="pain-inner">
+      <h2>Sound familiar?</h2>
+      <div class="grid">
+        <p>On the tools 7:30 to 4. Then site visits after dinner. Then <b>two, three hours every other night figuring bids</b> — calculator app for the yards, scribble on paper, retype it all into an invoice app. Saturdays too. And the bids you never got around to sending? Those jobs went to whoever texted a number first.</p>
+        <div class="night" aria-hidden="true">
+          <div><span class="t">6:40p</span> <span class="x">measure the Hendersons' patio</span></div>
+          <div><span class="t">8:15p</span> <span class="x">calculator app → 11.2 yards</span></div>
+          <div><span class="t">9:05p</span> <span class="x">retype it all into invoice app</span></div>
+          <div><span class="t">9:40p</span> <span class="x">too tired — "I'll send it tomorrow"</span></div>
+          <div><span class="t">&nbsp;</span> <span class="ok">— or —</span></div>
+          <div><span class="t">6:40p</span> <span class="ok">measure, price &amp; text it: 6 minutes ✓</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>How it works</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="kicker">STEP 1 — AT THE JOB</div>
+        <h3>Punch in the dimensions</h3>
+        <p>Slab, driveway, patio, sidewalk, steps, footings — pick the preset, enter the measurements. Yards (with your waste factor), mesh or rebar, and base gravel are figured instantly.</p>
+      </div>
+      <div class="step">
+        <div class="kicker">STEP 2 — YOUR NUMBERS</div>
+        <h3>Priced from your rates</h3>
+        <p>Your ready-mix price, your labor rate, your markup — saved once. Every bid uses your real costs and shows you your margin before you send. No magic price list. Your price list.</p>
+      </div>
+      <div class="step">
+        <div class="kicker">STEP 3 — BEFORE YOU LEAVE</div>
+        <h3>Text it. See it opened.</h3>
+        <p>Branded quote by text or email, customer approves from their phone, and you see when they've opened it. No more "I never got your email."</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="math">
+    <h2>No black-box numbers. Try the math.</h2>
+    <p class="lede">Some apps want AI to guess your price. You'd never send a number you can't check — so FlatworkQuote shows every line of the figure. Here's the live math, working right now:</p>
+    <div class="demo">
+      <div class="panel">
+        <div class="panel-head">Job: driveway slab <span class="tag">LIVE — TRY IT</span></div>
+        <div class="calc">
+          <div class="row2">
+            <div>
+              <label for="len">Length (ft)</label>
+              <input id="len" type="number" value="30" min="1" inputmode="decimal">
+            </div>
+            <div>
+              <label for="wid">Width (ft)</label>
+              <input id="wid" type="number" value="24" min="1" inputmode="decimal">
+            </div>
+          </div>
+          <label for="dep">Thickness</label>
+          <select id="dep">
+            <option value="4" selected>4 in — driveway / patio</option>
+            <option value="5">5 in — heavy vehicle</option>
+            <option value="6">6 in — pad / garage</option>
+          </select>
+          <div class="row2">
+            <div>
+              <label for="ppy">Ready-mix $/yd</label>
+              <input id="ppy" type="number" value="185" min="1" inputmode="decimal">
+            </div>
+            <div>
+              <label for="lab">Labor $/ft²</label>
+              <input id="lab" type="number" value="2.75" min="0" step="0.25" inputmode="decimal">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">The figure — every line shown</div>
+        <div class="mathwork" aria-live="polite">
+          <div class="dim"><span id="m-l">30</span> ft × <span id="m-w">24</span> ft = <span class="hl" id="m-area">720 ft²</span></div>
+          <div class="dim"><span id="m-area2">720</span> ft² × <span id="m-d">4</span>″ ÷ 27 = <span id="m-raw">8.9</span> yd</div>
+          <div class="dim">+ 5% waste → order <span class="hl" id="m-yards">9.5 yd</span></div>
+          <div class="rule-line"></div>
+          <div><span id="m-yards2">9.5</span> yd × $<span id="m-ppy">185</span> = <span class="hl" id="m-concrete">$1,758</span></div>
+          <div>mesh <span id="m-mesh">23</span> sheets × $18 = <span class="hl" id="m-meshcost">$414</span></div>
+          <div>labor <span id="m-area3">720</span> ft² × $<span id="m-lab">2.75</span> = <span class="hl" id="m-labor">$1,980</span></div>
+          <div class="rule-line"></div>
+          <div class="final">your price → <span class="hl" id="m-total">$4,152</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>It does one thing</h2>
+    <p class="lede">Most contractor software is built for GCs running crews — dashboards, CRMs, scheduling boards you'll never open. FlatworkQuote is built for the owner-operator who bids flatwork.</p>
+    <div class="onething">
+      <div class="does">
+        <h3>What it does</h3>
+        <ul>
+          <li>Figures yards, mesh/rebar &amp; base from dimensions — with your waste factor</li>
+          <li>Prices the job from your saved rates &amp; markup</li>
+          <li>Sends a branded quote by text or email, with open receipts</li>
+          <li>Customer approves from their phone</li>
+          <li>Exports everything as PDF &amp; CSV — your data stays yours</li>
+        </ul>
+      </div>
+      <div class="doesnt">
+        <h3>What it doesn't do</h3>
+        <ul>
+          <li>No CRM, no scheduling boards, no payroll</li>
+          <li>No AI guessing your price</li>
+          <li>No payment processing holding your money</li>
+          <li>No per-seat upsells as your crew grows</li>
+        </ul>
+        <p class="note">Keep QuickBooks, Joist, or your spreadsheet for the rest — FlatworkQuote plays alongside, not instead.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="pricing">
+    <h2 style="text-align:center">One price. It stays put.</h2>
+    <div class="price-card">
+      <div class="amount">$29<small>/month</small></div>
+      <div class="flatline">FLAT. UNLIMITED BIDS. NO GAMES.</div>
+      <ul>
+        <li><b>Unlimited</b> quotes &amp; customers — no invoice caps, ever</li>
+        <li><b>No per-user pricing</b> — your whole crew, one price</li>
+        <li>All flatwork presets: slab, driveway, patio, sidewalk, steps, footings</li>
+        <li>Your logo, your rates, your terms on every quote</li>
+        <li><b>Off-season pause</b> — freeze your account over winter, free</li>
+        <li>Cancel anytime and <b>keep your data</b> — full PDF/CSV export, no ransom</li>
+      </ul>
+      <div class="founding"><b>Founding crew:</b> the first 50 members lock in $29/mo <b>for good</b> — the price never rises on you, ever.</div>
+      <button class="btn-primary trial-btn" type="button">Start free trial — no card needed</button>
+      <p class="price-note">14-day free trial · $290/year (2 months free) · cancel anytime</p>
+    </div>
+  </section>
+
+  <section id="early-access" aria-live="polite">
+    <div class="signup-card">
+      <h3>Launching October 2026</h3>
+      <p>We're finishing the build with a founding crew of flatwork contractors. Two quick questions, then your email — founding members lock in $29/mo for good and pick what we build first.</p>
+      <!-- TODO before launch: replace YOUR_FORM_ID with real Formspree/Formspark endpoint -->
+      <form id="signup-form" action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
+        <fieldset>
+          <legend>What's your trade?</legend>
+          <div class="radio-row">
+            <label><input type="radio" name="trade" value="concrete-flatwork" required> Concrete / flatwork</label>
+            <label><input type="radio" name="trade" value="asphalt"> Asphalt / sealcoat</label>
+            <label><input type="radio" name="trade" value="hardscape"> Landscaping / hardscape</label>
+            <label><input type="radio" name="trade" value="other"> Other</label>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Bids you send in a typical month</legend>
+          <div class="radio-row">
+            <label><input type="radio" name="bids_per_month" value="1-3" required> 1–3</label>
+            <label><input type="radio" name="bids_per_month" value="4-10"> 4–10</label>
+            <label><input type="radio" name="bids_per_month" value="11-25"> 11–25</label>
+            <label><input type="radio" name="bids_per_month" value="25+"> 25+</label>
+          </div>
+        </fieldset>
+        <label class="email-label" for="email">Your email</label>
+        <input id="email" name="email" type="email" required placeholder="you@yourcompany.com" autocomplete="email">
+        <button class="btn-primary" type="submit">Lock in founding price</button>
+      </form>
+      <div class="thanks" id="thanks">✓ You're on the crew. We'll be in touch.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>From the builder</h2>
+    <div class="founder">
+      <p>I'm an independent software developer — not a finisher. What I know is building small, fast tools, and what I found talking to flatwork contractors is the same story every time: the yardage math lives in one app, the paperwork lives in another, and the gap between them gets filled at the kitchen table at 9pm.</p>
+      <p>So that's the whole product. I'm building it with a founding crew of working contractors who tell me what a real bid needs — and I'll be straight with you about what it doesn't do (there's a list right up there). One price, no investors pushing me to raise it, and you can reach me directly: I answer my own email.</p>
+      <p class="sig">— Asad<small>Builder, FlatworkQuote · <a href="mailto:hello@flatworkquote.com">hello@flatworkquote.com</a> — a person answers, not a bot</small></p>
+    </div>
+  </section>
+
+  <section class="faq">
+    <h2>Straight answers</h2>
+    <details>
+      <summary>Does it work on Android?</summary>
+      <p>Yes. It's a web app — runs in the browser on any Android phone, iPhone, tablet, or the office computer. Nothing to install, and the same price book is on every device.</p>
+    </details>
+    <details>
+      <summary>Will the price go up on me later?</summary>
+      <p>Founding members lock $29/mo for good — that's the deal, in writing, and it's why we cap it at 50. We've read the same reviews you have about apps that triple their price after you're stuck. Flat pricing is the product.</p>
+    </details>
+    <details>
+      <summary>Do I have to quit Joist or QuickBooks?</summary>
+      <p>No. FlatworkQuote handles measure-and-price. Everything exports as PDF and CSV, so invoicing and books stay wherever you run them today.</p>
+    </details>
+    <details>
+      <summary>What if I cancel — do I lose my quotes?</summary>
+      <p>Never. Full export of every quote and customer, PDF and CSV, cancel or not. Your bids are your business records, not our hostage.</p>
+    </details>
+    <details>
+      <summary>What kinds of work can it price?</summary>
+      <p>At launch: slabs, driveways, patios, sidewalks, steps, and footings — mesh, rebar, and base gravel figured in, with your waste factor. Asphalt and sealcoating are next; the founding crew votes on the order.</p>
+    </details>
+  </section>
+
+  <section class="final-cta">
+    <h2>Price your next bid from the truck</h2>
+    <button class="btn-primary trial-btn" type="button">Start free trial — no card needed</button>
+    <p class="price-note">$29/mo flat · unlimited bids · cancel anytime, keep your data</p>
+  </section>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>FlatworkQuote</b> — bidding for flatwork contractors</div>
+    <div><a href="mailto:hello@flatworkquote.com">hello@flatworkquote.com</a></div>
+    <div style="flex-basis:100%;font-size:12.5px;margin-top:6px">*First-responder win rates from published lead-response research (LeadWinner, 2025).</div>
+  </div>
+</footer>
+
+<div class="sticky-cta" aria-hidden="false">
+  <div class="s-price">$29/mo flat<small>unlimited bids · no card needed</small></div>
+  <button class="btn-primary trial-btn" type="button">Start free trial</button>
+</div>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  var fmt=function(n){return n.toLocaleString('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0})};
+  function calc(){
+    var L=parseFloat($('len').value)||0, W=parseFloat($('wid').value)||0,
+        D=parseFloat($('dep').value)||4, P=parseFloat($('ppy').value)||0,
+        R=parseFloat($('lab').value)||0;
+    var area=L*W;
+    var raw=area*(D/12)/27;
+    var yards=Math.ceil(raw*1.05*2)/2;
+    var mesh=Math.ceil(area/32);
+    var concrete=yards*P, meshCost=mesh*18, labor=area*R;
+    $('m-l').textContent=L; $('m-w').textContent=W;
+    $('m-area').textContent=area.toLocaleString()+' ft²';
+    $('m-area2').textContent=area.toLocaleString();
+    $('m-area3').textContent=area.toLocaleString();
+    $('m-d').textContent=D;
+    $('m-raw').textContent=raw.toFixed(1);
+    $('m-yards').textContent=yards+' yd';
+    $('m-yards2').textContent=yards;
+    $('m-ppy').textContent=P;
+    $('m-concrete').textContent=fmt(concrete);
+    $('m-mesh').textContent=mesh;
+    $('m-meshcost').textContent=fmt(meshCost);
+    $('m-lab').textContent=R;
+    $('m-labor').textContent=fmt(labor);
+    $('m-total').textContent=fmt(concrete+meshCost+labor);
+  }
+  ['len','wid','dep','ppy','lab'].forEach(function(id){ $(id).addEventListener('input',calc); });
+  calc();
+
+  function track(ev){ if(window.plausible) plausible(ev); }
+  function openDoor(){
+    track('PricingClick');
+    var ea=$('early-access');
+    ea.classList.add('open');
+    ea.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+  document.querySelectorAll('.trial-btn').forEach(function(b){ b.addEventListener('click',openDoor); });
+  document.querySelectorAll('a.trial-link').forEach(function(a){
+    a.addEventListener('click',function(e){ e.preventDefault(); openDoor(); });
+  });
+  $('signup-form').addEventListener('submit',function(e){
+    e.preventDefault();
+    track('Signup');
+    var f=e.target, data=new FormData(f);
+    fetch(f.action,{method:'POST',body:data,headers:{'Accept':'application/json'}})
+      .finally(function(){ f.style.display='none'; $('thanks').style.display='block'; });
+  });
+})();
+</script>
+</body>
+</html>
